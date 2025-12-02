@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas Séries</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">MINI-FLIX</div>
+        <div>
+            <a href="{{ url_for('index') }}">Início</a>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    {% if continue_list %}
+        <h2 class="section-title">Continuar assistindo</h2>
+        <div class="grid">
+            {% for item in continue_list %}
+                <a class="card" href="{{ url_for('watch', relative_path=item.relative_path) }}">
+                    <div class="poster-wrapper skeleton">
+                        {% if item.poster %}
+                            <img class="poster"
+                                 src="{{ url_for('media_file', relative_path=item.poster) }}"
+                                 alt="Poster {{ item.serie_name }}">
+                        {% else %}
+                            <div class="card-placeholder-text">
+                                {{ item.serie_name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-info">
+                        <p class="card-title">{{ item.serie_name }}</p>
+                        <span class="tag">Continuar</span>
+                        <div class="muted">Último episódio: {{ item.episode_name }}</div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <h2 class="section-title">Todas as séries</h2>
+    <div class="grid">
+        {% for serie in series_cards %}
+            <a class="card" href="{{ url_for('serie_detail', serie_name=serie.name) }}">
+                <div class="poster-wrapper skeleton">
+                    {% if serie.poster %}
+                        <img class="poster"
+                             src="{{ url_for('media_file', relative_path=serie.poster) }}"
+                             alt="Poster {{ serie.name }}">
+                    {% else %}
+                        <div class="card-placeholder-text">
+                            {{ serie.name }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-info">
+                    <p class="card-title">{{ serie.name }}</p>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+    // Fade + skeleton para posters da home
+    function markImageLoaded(img) {
+        img.classList.add("loaded");
+        const wrapper = img.closest(".skeleton");
+        if (wrapper) {
+            wrapper.classList.add("loaded");
+        }
+    }
+
+    document.querySelectorAll("img.poster").forEach(function (img) {
+        if (img.complete) {
+            markImageLoaded(img);
+        } else {
+            img.addEventListener("load", function () {
+                markImageLoaded(img);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ episode_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <a class="btn-back" href="javascript:history.back()">← Voltar</a>
+
+    <h1>{{ serie_name }} — {{ episode_name }}</h1>
+        <div class="video-wrapper">
+        <video id="videoPlayer" controls autoplay playsinline>
+            <source src="{{ url_for('stream', relative_path=stream_path if stream_path is defined else relative_path) }}" type="video/mp4">
+            Seu navegador não suporta o elemento de vídeo.
+        </video>
+    </div>
+
+    {% if next_episode %}
+    <div class="next-episode-bar">
+        <a class="btn next-episode-btn"
+        href="{{ url_for('watch', relative_path=next_episode) }}">
+            ▶ Próximo episódio
+        </a>
+
+    </div>
+    {% endif %}
+
+
+    {% if next_episode %}
+    <div id="autoplayOverlay" class="autoplay-overlay hidden">
+        <div class="autoplay-box">
+            <h2>Próximo episódio</h2>
+            <p>Vai começar em <span id="countdown">10</span> segundos...</p>
+
+            <div class="autoplay-buttons">
+                <a class="btn" href="{{ url_for('watch', relative_path=next_episode) }}">Assistir agora</a>
+                <button class="btn cancel" id="cancelAutoplay">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    const video = document.getElementById("videoPlayer");
+    const overlay = document.getElementById("autoplayOverlay");
+
+    // Jinja cria a URL ou uma string vazia
+    const nextUrl = "{{ url_for('watch', relative_path=next_episode) if next_episode else '' }}";
+
+    let countdown = 10;
+    let interval = null;
+
+    function startAutoplayCountdown() {
+        // sem próximo episódio → não faz nada
+        if (!overlay || !nextUrl) return;
+
+        overlay.classList.remove("hidden");
+        const countdownSpan = document.getElementById("countdown");
+
+        interval = setInterval(() => {
+            countdown--;
+            countdownSpan.textContent = countdown;
+
+            if (countdown <= 0) {
+                clearInterval(interval);
+                window.location.href = nextUrl;
+            }
+        }, 1000);
+    }
+
+    if (video) {
+        video.addEventListener("ended", () => {
+            if (nextUrl) startAutoplayCountdown();
+        });
+    }
+
+    const cancelBtn = document.getElementById("cancelAutoplay");
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+            clearInterval(interval);
+            overlay.classList.add("hidden");
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ serie_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">MINI-FLIX</div>
+        <div>
+            <a href="{{ url_for('index') }}">Início</a>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <a class="btn-back" href="{{ url_for('index') }}">← Voltar</a>
+
+    <h1>{{ serie_name }}</h1>
+
+    {% if poster %}
+        <div style="max-width: 250px; margin-bottom: 20px;">
+            <div class="poster-wrapper skeleton">
+                <img src="{{ url_for('media_file', relative_path=poster) }}"
+                     alt="Poster {{ serie_name }}"
+                     class="poster">
+            </div>
+        </div>
+    {% endif %}
+
+    {% for season in seasons %}
+        <div class="season-block {% if not loop.first %}collapsed{% endif %}">
+            <div class="season-header">
+                <div class="season-header-left">
+                    <span class="season-folder-icon">📁</span>
+                    <h2 class="season-title">{{ season.name }}</h2>
+                    <span class="season-count">{{ season.episodes|length }} eps</span>
+                </div>
+                <span class="season-toggle-icon">▶</span>
+            </div>
+
+            <div class="episodes-grid">
+                {% for ep in season.episodes %}
+                    <a class="episode-card" href="{{ url_for('watch', relative_path=ep.relative_path) }}">
+                        <div class="episode-thumb-wrapper skeleton">
+                            {% if ep.thumb %}
+                                <img class="episode-thumb"
+                                     src="{{ url_for('media_file', relative_path=ep.thumb) }}"
+                                     alt="Thumb {{ ep.filename }}">
+                            {% else %}
+                                <div class="episode-thumb-placeholder">
+                                    {{ loop.index }}º
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="episode-meta">
+                            <div class="episode-title">{{ ep.filename }}</div>
+
+                            {% if last_watched_path and ep.relative_path == last_watched_path %}
+                                <div class="episode-progress">
+                                    <div class="episode-progress-bar">
+                                        <div class="episode-progress-fill"></div>
+                                    </div>
+                                    <div class="episode-progress-label">Você parou aqui</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    // Temporadas retráteis
+    document.querySelectorAll(".season-header").forEach(function (header) {
+        header.addEventListener("click", function () {
+            const block = header.closest(".season-block");
+            block.classList.toggle("collapsed");
+        });
+    });
+
+    // Fade + skeleton: quando a imagem carrega, tiramos o skeleton e mostramos o fade
+    function markImageLoaded(img) {
+        img.classList.add("loaded");
+        const wrapper = img.closest(".skeleton");
+        if (wrapper) {
+            wrapper.classList.add("loaded");
+        }
+    }
+
+    document.querySelectorAll("img.poster, img.episode-thumb").forEach(function (img) {
+        if (img.complete) {
+            // Já carregou do cache
+            markImageLoaded(img);
+        } else {
+            img.addEventListener("load", function () {
+                markImageLoaded(img);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
