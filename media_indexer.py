@@ -1,5 +1,6 @@
 # media_indexer.py
 import os
+import re
 
 VIDEO_EXTS = (".mp4", ".mkv", ".avi", ".mov", ".wmv")
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
@@ -21,6 +22,15 @@ def _find_thumb_for_video(folder_path: str, video_name: str, serie_name: str, se
             else:
                 return f"{serie_name}/{cand}"
     return None
+
+
+def extract_number(text: str) -> int:
+    """
+    Extrai o primeiro número encontrado no texto para usar como chave de ordenação.
+    Se não tiver número, devolve 9999 (vai pro final).
+    """
+    nums = re.findall(r"\d+", text)
+    return int(nums[0]) if nums else 9999
 
 
 def get_series_library(media_root: str):
@@ -77,19 +87,17 @@ def get_series_library(media_root: str):
             elif entry.lower().endswith(VIDEO_EXTS):
                 loose_episodes.append(entry)
 
-        # Temporadas em subpastas
-        def extract_number(text: str) -> int:
-            import re
-            nums = re.findall(r'\d+', text)
-            return int(nums[0]) if nums else 9999  # sem número → vai pro final
-
+        # Temporadas em subpastas (ordenadas por número)
         for sd in sorted(season_dirs, key=extract_number):
 
             season_path = os.path.join(serie_path, sd)
             eps = []
-            for fname in sorted(os.listdir(season_path)):
+
+            # Episódios ordenados por número
+            for fname in sorted(os.listdir(season_path), key=extract_number):
                 if not fname.lower().endswith(VIDEO_EXTS):
                     continue
+
                 rel_path = f"{serie_name}/{sd}/{fname}"
                 thumb = _find_thumb_for_video(season_path, fname, serie_name, sd)
 
@@ -105,10 +113,10 @@ def get_series_library(media_root: str):
                     "episodes": eps
                 })
 
-        # Episódios soltos
+        # Episódios soltos (temporada "Episódios")
         if loose_episodes:
             eps = []
-            for f in sorted(loose_episodes):
+            for f in sorted(loose_episodes, key=extract_number):
                 rel_path = f"{serie_name}/{f}"
                 thumb = _find_thumb_for_video(serie_path, f, serie_name, None)
 
@@ -144,15 +152,30 @@ def get_series_cards(library: dict):
 
 
 def find_episode_info(library: dict, relative_path: str):
+    """
+    Encontra informações sobre um episódio a partir do caminho relativo.
+
+    Retorna:
+      {
+        "serie_name": str,
+        "episode_name": str,
+        "season_name": str,
+        "episode_index": int  # 1-based dentro da temporada
+      }
+    """
     rel_norm = relative_path.replace("\\", "/")
 
     for serie_name, data in library.items():
         for season in data.get("seasons", []):
-            for ep in season.get("episodes", []):
+            season_name = season.get("name", "")
+            episodes = season.get("episodes", [])
+            for idx, ep in enumerate(episodes):
                 if ep["relative_path"] == rel_norm:
                     return {
                         "serie_name": serie_name,
-                        "episode_name": ep["filename"]
+                        "episode_name": ep["filename"],
+                        "season_name": season_name,
+                        "episode_index": idx + 1,
                     }
 
     return None

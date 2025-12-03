@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MINI-FLIX{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">MINI-FLIX</div>
+
+        <nav class="nav">
+            <a href="{{ url_for('index') }}">Início</a>
+            <!-- futuro: filtros, configurações etc -->
+            {% block header_actions %}{% endblock %}
+        </nav>
+    </div>
+</header>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

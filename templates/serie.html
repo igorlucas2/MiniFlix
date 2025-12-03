@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>{{ serie_name }}</title>
+    <title>{{ serie_name }} — MINI-FLIX</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -11,99 +11,99 @@
 <header class="header">
     <div class="header-inner">
         <div class="logo">MINI-FLIX</div>
-        <div>
-            <a href="{{ url_for('index') }}">Início</a>
+
+        <div class="header-right">
+            <div class="nav">
+                <a href="{{ url_for('index') }}">Início</a>
+                <input id="searchInput" type="text" placeholder="Buscar série..." class="search-input">
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="user-menu">
+                <a href="{{ url_for('profile') }}" class="avatar-link" title="Perfil">
+                    <img src="{{ current_user.avatar_url }}" alt="Avatar">
+                </a>
+                <a href="{{ url_for('logout') }}" class="user-link logout-link">Sair</a>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </header>
 
 <div class="container">
+
     <a class="btn-back" href="{{ url_for('index') }}">← Voltar</a>
 
     <h1>{{ serie_name }}</h1>
 
+    <!-- Poster opcional -->
     {% if poster %}
-        <div style="max-width: 250px; margin-bottom: 20px;">
-            <div class="poster-wrapper skeleton">
-                <img src="{{ url_for('media_file', relative_path=poster) }}"
-                     alt="Poster {{ serie_name }}"
-                     class="poster">
-            </div>
-        </div>
+        <img class="serie-poster-large" src="{{ url_for('media_file', relative_path=poster) }}">
     {% endif %}
 
-    {% for season in seasons %}
-        <div class="season-block {% if not loop.first %}collapsed{% endif %}">
-            <div class="season-header">
-                <div class="season-header-left">
-                    <span class="season-folder-icon">📁</span>
-                    <h2 class="season-title">{{ season.name }}</h2>
-                    <span class="season-count">{{ season.episodes|length }} eps</span>
-                </div>
-                <span class="season-toggle-icon">▶</span>
-            </div>
+    <h2 class="section-title">Episódios</h2>
 
-            <div class="episodes-grid">
-                {% for ep in season.episodes %}
-                    <a class="episode-card" href="{{ url_for('watch', relative_path=ep.relative_path) }}">
-                        <div class="episode-thumb-wrapper skeleton">
-                            {% if ep.thumb %}
-                                <img class="episode-thumb"
-                                     src="{{ url_for('media_file', relative_path=ep.thumb) }}"
-                                     alt="Thumb {{ ep.filename }}">
-                            {% else %}
-                                <div class="episode-thumb-placeholder">
-                                    {{ loop.index }}º
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="episode-meta">
-                            <div class="episode-title">{{ ep.filename }}</div>
+    <!-- MENU DE TEMPORADA -->
+    <div class="season-picker">
+        <label>Selecionar temporada:</label>
+        <select id="seasonSelect">
+            {% for i in range(seasons|length) %}
+                <option value="{{ i }}">{{ seasons[i].name }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-                            {% if last_watched_path and ep.relative_path == last_watched_path %}
-                                <div class="episode-progress">
-                                    <div class="episode-progress-bar">
-                                        <div class="episode-progress-fill"></div>
-                                    </div>
-                                    <div class="episode-progress-label">Você parou aqui</div>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </a>
-                {% endfor %}
-            </div>
-        </div>
-    {% endfor %}
+    <!-- LISTA DE EPISÓDIOS AQUI -->
+    <div id="episodesList" class="episodes-list-netflix"></div>
+
 </div>
 
 <script>
-    // Temporadas retráteis
-    document.querySelectorAll(".season-header").forEach(function (header) {
-        header.addEventListener("click", function () {
-            const block = header.closest(".season-block");
-            block.classList.toggle("collapsed");
-        });
-    });
+    const serieName = "{{ serie_name }}";
+    const episodesList = document.getElementById("episodesList");
+    const seasonSelect = document.getElementById("seasonSelect");
 
-    // Fade + skeleton: quando a imagem carrega, tiramos o skeleton e mostramos o fade
-    function markImageLoaded(img) {
-        img.classList.add("loaded");
-        const wrapper = img.closest(".skeleton");
-        if (wrapper) {
-            wrapper.classList.add("loaded");
-        }
+    // Busca episódios da temporada via API
+    async function loadSeason(seasonIndex) {
+
+        const resp = await fetch(`/api/serie/${encodeURIComponent(serieName)}/temporada/${seasonIndex}`);
+        const data = await resp.json();
+
+        episodesList.innerHTML = "";
+
+        data.episodes.forEach(ep => {
+            const el = document.createElement("div");
+            el.className = "episode-item";
+
+            el.innerHTML = `
+                <div class="episode-left">
+                    <img class="episode-thumb-large" src="${ep.thumb}">
+                </div>
+
+                <div class="episode-right">
+                    <h3 class="episode-title-netflix">
+                        Episódio ${ep.number}: ${ep.filename}
+                    </h3>
+                    <p class="episode-description">${ep.description}</p>
+
+                    <a class="btn-episode" href="/watch/${ep.relative_path}">
+                        ▶ Assistir
+                    </a>
+                </div>
+            `;
+
+            episodesList.appendChild(el);
+        });
     }
 
-    document.querySelectorAll("img.poster, img.episode-thumb").forEach(function (img) {
-        if (img.complete) {
-            // Já carregou do cache
-            markImageLoaded(img);
-        } else {
-            img.addEventListener("load", function () {
-                markImageLoaded(img);
-            });
-        }
+    // Evento de mudança de temporada
+    seasonSelect.addEventListener("change", (e) => {
+        loadSeason(e.target.value);
     });
+
+    // Carregar temporada inicial
+    loadSeason(0);
 </script>
 
 </body>

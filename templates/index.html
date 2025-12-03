@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Minhas Séries</title>
+    <title>Minhas Séries — MINI-FLIX</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -11,11 +11,26 @@
 <header class="header">
     <div class="header-inner">
         <div class="logo">MINI-FLIX</div>
-        <div>
-            <a href="{{ url_for('index') }}">Início</a>
+
+        <div class="header-right">
+            <div class="nav">
+                <a href="{{ url_for('index') }}">Início</a>
+                <input id="searchInput" type="text" placeholder="Buscar série..." class="search-input">
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="user-menu">
+                <a href="{{ url_for('profile') }}" class="avatar-link" title="Perfil">
+                    <img src="{{ current_user.avatar_url }}" alt="Avatar">
+                </a>
+                <a href="{{ url_for('logout') }}" class="user-link logout-link">Sair</a>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </header>
+
 
 <div class="container">
 
@@ -28,7 +43,7 @@
                         {% if item.poster %}
                             <img class="poster"
                                  src="{{ url_for('media_file', relative_path=item.poster) }}"
-                                 alt="Poster {{ item.serie_name }}">
+                                 alt="Poster de {{ item.serie_name }}">
                         {% else %}
                             <div class="card-placeholder-text">
                                 {{ item.serie_name }}
@@ -43,34 +58,46 @@
                 </a>
             {% endfor %}
         </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>Bem-vindo(a) ao MINI-FLIX 🍿</h2>
+            <p>Você ainda não começou nenhuma série. Escolha uma abaixo para começar a maratonar.</p>
+        </div>
     {% endif %}
 
     <h2 class="section-title">Todas as séries</h2>
-    <div class="grid">
-        {% for serie in series_cards %}
-            <a class="card" href="{{ url_for('serie_detail', serie_name=serie.name) }}">
-                <div class="poster-wrapper skeleton">
-                    {% if serie.poster %}
-                        <img class="poster"
-                             src="{{ url_for('media_file', relative_path=serie.poster) }}"
-                             alt="Poster {{ serie.name }}">
-                    {% else %}
-                        <div class="card-placeholder-text">
-                            {{ serie.name }}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="card-info">
-                    <p class="card-title">{{ serie.name }}</p>
-                </div>
-            </a>
-        {% endfor %}
-    </div>
+
+    {% if series_cards %}
+        <div class="grid" id="seriesGrid">
+            {% for serie in series_cards %}
+                <a class="card series-card"
+                   data-name="{{ serie.name | lower }}"
+                   href="{{ url_for('serie_detail', serie_name=serie.name) }}">
+                    <div class="poster-wrapper skeleton">
+                        {% if serie.poster %}
+                            <img class="poster"
+                                 src="{{ url_for('media_file', relative_path=serie.poster) }}"
+                                 alt="Poster de {{ serie.name }}">
+                        {% else %}
+                            <div class="card-placeholder-text">
+                                {{ serie.name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-info">
+                        <p class="card-title">{{ serie.name }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="muted">Nenhuma série encontrada na pasta configurada.</p>
+    {% endif %}
 
 </div>
 
 <script>
-    // Fade + skeleton para posters da home
+    // Skeleton + fade
     function markImageLoaded(img) {
         img.classList.add("loaded");
         const wrapper = img.closest(".skeleton");
@@ -88,6 +115,21 @@
             });
         }
     });
+
+    // Busca simples de séries
+    const searchInput = document.getElementById("searchInput");
+    const cards = document.querySelectorAll(".series-card");
+
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            const term = this.value.trim().toLowerCase();
+
+            cards.forEach(card => {
+                const name = card.dataset.name;
+                card.style.display = (!term || name.includes(term)) ? "" : "none";
+            });
+        });
+    }
 </script>
 
 </body>

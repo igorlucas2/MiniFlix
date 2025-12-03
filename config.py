@@ -1,14 +1,19 @@
 # config.py
 import os
 
-# Pasta base do projeto (onde está o app.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Pasta onde ficam as séries/filmes
+# === já existia algo assim ===
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
-# Pasta para arquivos de dados (progresso, etc.)
 DATA_DIR = os.path.join(BASE_DIR, "data")
-
-# Arquivo onde vamos salvar o "continuar assistindo"
 PROGRESS_FILE = os.path.join(DATA_DIR, "progress.json")
+
+# === NOVO: configs de Flask/DB ===
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")  # troque em produção
+
+SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "app.db")
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# Pasta para avatares
+AVATAR_UPLOAD_FOLDER = os.path.join("static", "avatars")
+ALLOWED_AVATAR_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
