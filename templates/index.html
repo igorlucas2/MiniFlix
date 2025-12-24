@@ -1,136 +1,116 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Minhas Séries — MINI-FLIX</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Catálogo — METFLIX{% endblock %}
 
-<header class="header">
-    <div class="header-inner">
-        <div class="logo">MINI-FLIX</div>
-
-        <div class="header-right">
-            <div class="nav">
-                <a href="{{ url_for('index') }}">Início</a>
-                <input id="searchInput" type="text" placeholder="Buscar série..." class="search-input">
-            </div>
-
-            {% if current_user.is_authenticated %}
-            <div class="user-menu">
-                <a href="{{ url_for('profile') }}" class="avatar-link" title="Perfil">
-                    <img src="{{ current_user.avatar_url }}" alt="Avatar">
-                </a>
-                <a href="{{ url_for('logout') }}" class="user-link logout-link">Sair</a>
-            </div>
-            {% endif %}
-
-        </div>
+{% block header_actions %}
+    <div class="header-search">
+        <input id="searchInput"
+               type="text"
+               class="search-input"
+               placeholder="Buscar série..."
+               autocomplete="off"
+               data-search-input
+               aria-label="Buscar série">
     </div>
-</header>
+{% endblock %}
 
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <p class="hero-eyebrow">Seu cinema pessoal</p>
+        <h1 class="hero-title">Maratonas com atmosfera.</h1>
+        <p class="hero-subtitle">
+            Continue de onde parou ou descubra algo novo no seu catálogo.
+        </p>
+    </div>
+</section>
 
-<div class="container">
-
-    {% if continue_list %}
-        <h2 class="section-title">Continuar assistindo</h2>
+{% if continue_list %}
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title">Continuar assistindo</h2>
+        </div>
         <div class="grid">
             {% for item in continue_list %}
-                <a class="card" href="{{ url_for('watch', relative_path=item.relative_path) }}">
-                    <div class="poster-wrapper skeleton">
+                <a class="card card-continue"
+                   href="{{ url_for('watch', relative_path=item.relative_path) }}"
+                   style="--delay: {{ loop.index0 * 60 }}ms">
+                    <div class="card-media skeleton">
                         {% if item.poster %}
                             <img class="poster"
                                  src="{{ url_for('media_file', relative_path=item.poster) }}"
-                                 alt="Poster de {{ item.serie_name }}">
+                                 alt="Poster de {{ item.serie_name }}"
+                                 loading="lazy"
+                                 decoding="async">
                         {% else %}
                             <div class="card-placeholder-text">
                                 {{ item.serie_name }}
                             </div>
                         {% endif %}
                     </div>
-                    <div class="card-info">
-                        <p class="card-title">{{ item.serie_name }}</p>
-                        <span class="tag">Continuar</span>
-                        <div class="muted">Último episódio: {{ item.episode_name }}</div>
+                    <div class="card-body">
+                        <span class="pill pill-accent">Continuar</span>
+                        <h3 class="card-title">{{ item.serie_name }}</h3>
+                        <p class="card-meta">Último episódio: {{ item.episode_name }}</p>
                     </div>
                 </a>
             {% endfor %}
         </div>
-    {% else %}
-        <div class="empty-state">
-            <h2>Bem-vindo(a) ao MINI-FLIX 🍿</h2>
-            <p>Você ainda não começou nenhuma série. Escolha uma abaixo para começar a maratonar.</p>
-        </div>
-    {% endif %}
+    </section>
+{% else %}
+    <section class="empty-state">
+        <h2>Bem-vindo(a) ao Metflix</h2>
+        <p>Você ainda não começou nenhuma série. Escolha uma abaixo para iniciar a maratona.</p>
+    </section>
+{% endif %}
 
-    <h2 class="section-title">Todas as séries</h2>
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Todas as séries</h2>
+        {% if series_cards %}
+            <span class="section-count">{{ series_cards|length }} títulos</span>
+        {% endif %}
+    </div>
 
     {% if series_cards %}
         <div class="grid" id="seriesGrid">
             {% for serie in series_cards %}
                 <a class="card series-card"
+                   data-search-card
                    data-name="{{ serie.name | lower }}"
-                   href="{{ url_for('serie_detail', serie_name=serie.name) }}">
-                    <div class="poster-wrapper skeleton">
+                   href="{{ url_for('serie_detail', serie_name=serie.name) }}"
+                   style="--delay: {{ loop.index0 * 40 }}ms">
+                    <div class="card-media skeleton">
                         {% if serie.poster %}
                             <img class="poster"
                                  src="{{ url_for('media_file', relative_path=serie.poster) }}"
-                                 alt="Poster de {{ serie.name }}">
+                                 alt="Poster de {{ serie.name }}"
+                                 loading="lazy"
+                                 decoding="async">
                         {% else %}
                             <div class="card-placeholder-text">
                                 {{ serie.name }}
                             </div>
                         {% endif %}
                     </div>
-                    <div class="card-info">
-                        <p class="card-title">{{ serie.name }}</p>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ serie.name }}</h3>
                     </div>
                 </a>
             {% endfor %}
         </div>
+        <div class="empty-state hidden" data-search-empty>
+            <h2>Nenhuma série encontrada</h2>
+            <p>Tente outro termo ou verifique a pasta configurada.</p>
+        </div>
     {% else %}
-        <p class="muted">Nenhuma série encontrada na pasta configurada.</p>
+        <div class="empty-state">
+            <h2>Nenhuma série encontrada</h2>
+            <p>Nenhum título apareceu na pasta configurada no momento.</p>
+        </div>
     {% endif %}
+</section>
+{% endblock %}
 
-</div>
-
-<script>
-    // Skeleton + fade
-    function markImageLoaded(img) {
-        img.classList.add("loaded");
-        const wrapper = img.closest(".skeleton");
-        if (wrapper) {
-            wrapper.classList.add("loaded");
-        }
-    }
-
-    document.querySelectorAll("img.poster").forEach(function (img) {
-        if (img.complete) {
-            markImageLoaded(img);
-        } else {
-            img.addEventListener("load", function () {
-                markImageLoaded(img);
-            });
-        }
-    });
-
-    // Busca simples de séries
-    const searchInput = document.getElementById("searchInput");
-    const cards = document.querySelectorAll(".series-card");
-
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
-            const term = this.value.trim().toLowerCase();
-
-            cards.forEach(card => {
-                const name = card.dataset.name;
-                card.style.display = (!term || name.includes(term)) ? "" : "none";
-            });
-        });
-    }
-</script>
-
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js') }}" defer></script>
+{% endblock %}

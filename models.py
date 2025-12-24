@@ -35,3 +35,20 @@ class User(UserMixin, db.Model):
         if self.avatar_filename:
             return url_for("static", filename=f"avatars/{self.avatar_filename}")
         return url_for("static", filename="avatars/default.png")
+
+
+class WatchProgress(db.Model):
+    __tablename__ = "watch_progress"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    relative_path = db.Column(db.String(500), nullable=False)
+    serie_name = db.Column(db.String(255), nullable=False)
+    episode_name = db.Column(db.String(255), nullable=False)
+    last_watched = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user = db.relationship("User", backref=db.backref("watch_progress", lazy="dynamic"))
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "relative_path", name="uq_progress_user_path"),
+    )

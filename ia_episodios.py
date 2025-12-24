@@ -23,6 +23,7 @@ DEBUG_IA_EP = True
 
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DESCRIPTIONS_FILE = os.path.join(DATA_DIR, "descriptions.json")
+_CACHE_MEM: Dict[str, Any] | None = None
 
 
 def _debug(msg: str):
@@ -35,21 +36,29 @@ def _debug(msg: str):
 # ==========================================
 
 def _load_cache() -> Dict[str, Any]:
+    global _CACHE_MEM
+    if _CACHE_MEM is not None:
+        return _CACHE_MEM
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(DESCRIPTIONS_FILE):
-        return {}
+        _CACHE_MEM = {}
+        return _CACHE_MEM
     try:
         with open(DESCRIPTIONS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            _CACHE_MEM = json.load(f)
+            return _CACHE_MEM
     except Exception as e:
         _debug(f"Erro ao carregar cache: {e}")
-        return {}
+        _CACHE_MEM = {}
+        return _CACHE_MEM
 
 
 def _save_cache(cache: Dict[str, Any]) -> None:
+    global _CACHE_MEM
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(DESCRIPTIONS_FILE, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
+    _CACHE_MEM = cache
 
 
 # ==========================================

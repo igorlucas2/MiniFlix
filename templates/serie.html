@@ -1,110 +1,51 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ serie_name }} — MINI-FLIX</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}{{ serie_name }} — METFLIX{% endblock %}
 
-<header class="header">
-    <div class="header-inner">
-        <div class="logo">MINI-FLIX</div>
+{% block content %}
+<a class="btn btn-ghost btn-back" href="{{ url_for('index') }}">Voltar</a>
 
-        <div class="header-right">
-            <div class="nav">
-                <a href="{{ url_for('index') }}">Início</a>
-                <input id="searchInput" type="text" placeholder="Buscar série..." class="search-input">
+<section class="serie-hero">
+    <div class="serie-poster">
+        {% if poster %}
+            <img class="serie-poster-img"
+                 src="{{ url_for('media_file', relative_path=poster) }}"
+                 alt="Poster de {{ serie_name }}"
+                 loading="lazy"
+                 decoding="async">
+        {% else %}
+            <div class="serie-poster-placeholder">{{ serie_name }}</div>
+        {% endif %}
+    </div>
+    <div class="serie-info">
+        <p class="serie-eyebrow">Série</p>
+        <h1 class="page-title">{{ serie_name }}</h1>
+        <p class="serie-meta">{{ seasons|length }} temporadas</p>
+
+        <div class="season-picker">
+            <label for="seasonSelect">Selecionar temporada</label>
+            <div class="select-wrapper">
+                <select id="seasonSelect">
+                    {% for i in range(seasons|length) %}
+                        <option value="{{ i }}">{{ seasons[i].name }}</option>
+                    {% endfor %}
+                </select>
             </div>
-
-            {% if current_user.is_authenticated %}
-            <div class="user-menu">
-                <a href="{{ url_for('profile') }}" class="avatar-link" title="Perfil">
-                    <img src="{{ current_user.avatar_url }}" alt="Avatar">
-                </a>
-                <a href="{{ url_for('logout') }}" class="user-link logout-link">Sair</a>
-            </div>
-            {% endif %}
-
         </div>
     </div>
-</header>
+</section>
 
-<div class="container">
-
-    <a class="btn-back" href="{{ url_for('index') }}">← Voltar</a>
-
-    <h1>{{ serie_name }}</h1>
-
-    <!-- Poster opcional -->
-    {% if poster %}
-        <img class="serie-poster-large" src="{{ url_for('media_file', relative_path=poster) }}">
-    {% endif %}
-
-    <h2 class="section-title">Episódios</h2>
-
-    <!-- MENU DE TEMPORADA -->
-    <div class="season-picker">
-        <label>Selecionar temporada:</label>
-        <select id="seasonSelect">
-            {% for i in range(seasons|length) %}
-                <option value="{{ i }}">{{ seasons[i].name }}</option>
-            {% endfor %}
-        </select>
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Episódios</h2>
     </div>
+    <div id="episodesList"
+         class="episodes-list"
+         data-serie="{{ serie_name }}"
+         data-watch-base="{{ url_for('watch', relative_path='__PATH__') }}">
+    </div>
+</section>
+{% endblock %}
 
-    <!-- LISTA DE EPISÓDIOS AQUI -->
-    <div id="episodesList" class="episodes-list-netflix"></div>
-
-</div>
-
-<script>
-    const serieName = "{{ serie_name }}";
-    const episodesList = document.getElementById("episodesList");
-    const seasonSelect = document.getElementById("seasonSelect");
-
-    // Busca episódios da temporada via API
-    async function loadSeason(seasonIndex) {
-
-        const resp = await fetch(`/api/serie/${encodeURIComponent(serieName)}/temporada/${seasonIndex}`);
-        const data = await resp.json();
-
-        episodesList.innerHTML = "";
-
-        data.episodes.forEach(ep => {
-            const el = document.createElement("div");
-            el.className = "episode-item";
-
-            el.innerHTML = `
-                <div class="episode-left">
-                    <img class="episode-thumb-large" src="${ep.thumb}">
-                </div>
-
-                <div class="episode-right">
-                    <h3 class="episode-title-netflix">
-                        Episódio ${ep.number}: ${ep.filename}
-                    </h3>
-                    <p class="episode-description">${ep.description}</p>
-
-                    <a class="btn-episode" href="/watch/${ep.relative_path}">
-                        ▶ Assistir
-                    </a>
-                </div>
-            `;
-
-            episodesList.appendChild(el);
-        });
-    }
-
-    // Evento de mudança de temporada
-    seasonSelect.addEventListener("change", (e) => {
-        loadSeason(e.target.value);
-    });
-
-    // Carregar temporada inicial
-    loadSeason(0);
-</script>
-
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/serie.js') }}" defer></script>
+{% endblock %}

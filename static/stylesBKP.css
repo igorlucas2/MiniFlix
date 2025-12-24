@@ -1,0 +1,906 @@
+/* =======================
+   GLOBAL
+======================= */
+:root {
+    --bg-main: #000;
+    --bg-elevated: #141414;
+    --bg-card: #181818;
+    --accent: #e50914;
+    --accent-hover: #f6121d;
+    --text-primary: #ffffff;
+    --text-muted: #aaaaaa;
+    --radius-lg: 8px;
+    --radius-pill: 999px;
+    --shadow-strong: 0 10px 25px rgba(0, 0, 0, 0.6);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at top, #222 0, #000 55%);
+    font-family: Arial, Helvetica, sans-serif;
+    color: #fff;
+}
+
+/* Container padrão */
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 20px auto 40px auto;
+}
+.empty-state {
+    margin: 25px 0;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    background: rgba(20, 20, 20, 0.85);
+    border: 1px solid #262626;
+    text-align: center;
+}
+.btn-header {
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    background: #111;
+    color: #eee;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.btn-header:hover {
+    background: #222;
+}
+
+/* overlay de configurações */
+.settings-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 998;
+}
+
+.settings-panel.hidden {
+    display: none;
+}
+
+.settings-box {
+    background: #111;
+    border-radius: 10px;
+    border: 1px solid #333;
+    padding: 20px 22px;
+    width: 90%;
+    max-width: 380px;
+    color: #fff;
+}
+
+.settings-box h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 10px 0;
+    font-size: 0.9rem;
+}
+
+.settings-row input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+.settings-close {
+    margin-top: 12px;
+    width: 100%;
+}
+
+/* micro-animação de entrada da página */
+.page-enter {
+    opacity: 0;
+    transform: translateY(4px);
+}
+
+.page-enter.page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+
+.empty-state h2,
+.empty-state h1 {
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+}
+
+/* Cabeçalho */
+.header {
+    background: #141414;
+    padding: 15px 0;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.header-inner {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #e50914;
+}
+
+.header a {
+    color: #ddd;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.header a:hover {
+    color: #fff;
+}
+
+/* Navegação/header */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    background: #111;
+    color: #eee;
+    font-size: 0.85rem;
+}
+
+.search-input::placeholder {
+    color: #777;
+}
+
+/* Títulos */
+h1, h2, h3 {
+    font-weight: normal;
+    margin-bottom: 15px;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    margin: 25px 0 10px 0;
+}
+
+/* Links padrão */
+a {
+    color: #fff;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+/* =======================
+   BOTÕES
+======================= */
+
+/* Botão padrão reutilizável (para overlay, etc) */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    background: #e50914;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:hover {
+    background: #f6121d;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    transform: translateY(-1px);
+}
+
+/* Botão voltar */
+.btn-back {
+    display: inline-block;
+    margin-bottom: 15px;
+    padding: 8px 15px;
+    background: #222;
+    border-radius: 999px;
+    color: #ccc;
+    transition: 0.2s;
+    border: 1px solid #333;
+    font-size: 0.9rem;
+}
+
+.btn-back:hover {
+    background: #333;
+    color: #fff;
+}
+
+/* Navegação de episódios (abaixo do vídeo) */
+.episode-nav {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end; /* se quiser centralizar: center */
+}
+
+.btn-episode {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    background: #e50914;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-episode:hover {
+    background: #f6121d;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    transform: translateY(-1px);
+}
+
+/* =======================
+   GRADE DE CARDS
+======================= */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    background: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    min-height: 210px;
+}
+
+.card:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    background: #202020;
+}
+
+.poster-wrapper {
+    width: 100%;
+    height: 190px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #333, #111);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Quando não tem poster, mostra só o nome */
+.card-placeholder-text {
+    font-size: 0.9rem;
+    padding: 8px;
+    text-align: center;
+    color: #eee;
+}
+
+/* Título no rodapé do card */
+.card-info {
+    padding: 8px 10px;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Tagzinha tipo "Continuar" */
+.tag {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    background: #e50914;
+    color: #fff;
+}
+
+/* Texto auxiliar menor */
+.muted {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+/* =======================
+   LISTA / GRID DE EPISÓDIOS
+======================= */
+.season-block {
+    margin-bottom: 25px;
+}
+
+.season-title {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.episodes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.episodes-list li {
+    background: #181818;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 5px;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.episodes-list li:hover {
+    background: #222;
+    transform: translateY(-1px);
+}
+
+/* =======================
+   PLAYER
+======================= */
+/* =======================
+   PLAYER
+======================= */
+
+/* Container com proporção fixa (16:9) — evita corte e mantém layout bonito */
+.video-wrapper {
+    margin-top: 10px;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #222;
+}
+
+/* O vídeo ocupa todo o container e NÃO corta legenda */
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #000;
+
+    /* ESSENCIAL: não cortar a imagem/legenda */
+    object-fit: contain;
+}
+
+
+/* Informações do episódio */
+.episode-info {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* =======================
+   TEMPORADAS RETRÁTEIS
+======================= */
+.season-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #181818;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    border: 1px solid #262626;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.season-header:hover {
+    background: #222;
+    transform: translateY(-1px);
+}
+
+.season-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.season-folder-icon {
+    font-size: 1.1rem;
+}
+
+.season-title {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.season-count {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.season-toggle-icon {
+    font-size: 0.8rem;
+    color: #aaa;
+    transition: transform 0.2s;
+}
+
+/* quando colapsado, fecha lista e gira seta */
+.season-block.collapsed .episodes-grid {
+    display: none;
+}
+
+.season-block.collapsed .season-toggle-icon {
+    transform: rotate(90deg);
+}
+
+/* =======================
+   EPISÓDIOS EM GRID
+======================= */
+.episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 8px 0 20px 0;
+}
+
+.episode-card {
+    display: flex;
+    flex-direction: column;
+    background: #101010;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #222;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.episode-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.7);
+    background: #191919;
+}
+
+.episode-thumb-wrapper {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: radial-gradient(circle at top, #333 0, #111 60%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.episode-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.episode-thumb-placeholder {
+    font-size: 1rem;
+    color: #ddd;
+}
+
+.episode-meta {
+    padding: 8px 10px;
+}
+
+.episode-title {
+    font-size: 0.9rem;
+    color: #f5f5f5;
+}
+
+/* =======================
+   SKELETON LOADING + FADE
+======================= */
+
+/* wrappers que terão skeleton (posters e thumbs) */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #222;
+}
+
+.skeleton::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        #222 0%,
+        #333 50%,
+        #222 100%
+    );
+    opacity: 0.7;
+    animation: skeleton-shimmer 1.2s infinite;
+}
+
+.skeleton.loaded::before {
+    opacity: 0;
+    animation: none;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* imagens começam invisíveis e aparecem com fade */
+.poster,
+.episode-thumb {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.poster.loaded,
+.episode-thumb.loaded {
+    opacity: 1;
+}
+
+/* =======================
+   BARRA "VOCÊ PAROU AQUI"
+======================= */
+
+.episode-progress {
+    margin-top: 6px;
+}
+
+.episode-progress-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: #333;
+    overflow: hidden;
+}
+
+.episode-progress-fill {
+    width: 100%;
+    height: 100%;
+    background: #e50914;
+}
+
+.episode-progress-label {
+    margin-top: 3px;
+    font-size: 0.7rem;
+    color: #e50914;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* =======================
+   AUTOPLAY OVERLAY
+======================= */
+
+.autoplay-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.autoplay-overlay.hidden {
+    display: none;
+}
+
+.autoplay-box {
+    background: #111;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #333;
+}
+
+.autoplay-box h2 {
+    margin-bottom: 10px;
+}
+
+.autoplay-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* reusa .btn, mas permite override pela classe cancel */
+.autoplay-buttons .btn {
+    border-radius: 5px;
+}
+
+.autoplay-buttons .btn.cancel {
+    background: #666;
+}
+
+.autoplay-buttons .btn.cancel:hover {
+    background: #777;
+}
+
+/* =======================
+   RESPONSIVO
+======================= */
+
+@media (max-width: 768px) {
+    .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .container {
+        width: 95%;
+    }
+
+    video {
+        max-height: 45vh;
+    }
+}
+
+/* MOBILE FIRST */
+@media (max-width: 480px) {
+
+    .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 4px 0;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    .container {
+        width: 95%;
+        margin-top: 15px;
+    }
+
+    .btn-back {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+
+    .card {
+        min-height: 180px;
+    }
+
+    .poster-wrapper {
+        height: 160px;
+    }
+
+    .episodes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+    }
+
+    .episode-card {
+        border-radius: 5px;
+    }
+
+    .episode-title {
+        font-size: 0.75rem;
+    }
+
+    .season-header {
+        padding: 8px 10px;
+    }
+
+    .season-title {
+        font-size: 0.9rem;
+    }
+
+    .season-count {
+        font-size: 0.75rem;
+    }
+
+    .season-folder-icon {
+        font-size: 1rem;
+    }
+
+    video {
+        max-height: 40vh;
+        border-radius: 8px;
+    }
+
+    .episode-info {
+        font-size: 0.85rem;
+    }
+
+    .episode-nav {
+        justify-content: center;
+    }
+}
+
+/* TABLETS */
+@media (min-width: 480px) && (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .episodes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    video {
+        max-height: 50vh;
+    }
+}
+/* ---- NETFLIX LIST STYLE ---- */
+
+.serie-poster-large {
+    width: 240px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.season-picker {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.season-picker select {
+    padding: 8px 12px;
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 6px;
+}
+
+/* EPISÓDIOS EM LISTA */
+.episodes-list-netflix {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.episode-item {
+    display: flex;
+    gap: 15px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #222;
+}
+
+.episode-thumb-large {
+    width: 180px;
+    height: 100px;
+    object-fit: cover;
+    background: #222;
+    border-radius: 6px;
+}
+
+.episode-right {
+    flex: 1;
+}
+
+.episode-title-netflix {
+    margin: 0 0 6px 0;
+}
+
+.episode-description {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0 0 10px 0;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.user-label {
+    color: #ccc;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-link {
+    font-size: 0.85rem;
+    color: #ddd;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid #333;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.user-link:hover {
+    background: #333;
+    color: #fff;
+    border-color: #555;
+}
+
+.logout-link {
+    border-color: #e50914;
+    color: #e50914;
+}
+
+.logout-link:hover {
+    background: #e50914;
+    color: #fff;
+}
+.avatar-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #e50914;
+    background: #111;
+    cursor: pointer;
+}
+
+.avatar-link img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

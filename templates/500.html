@@ -1,25 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Erro no servidor — MINI-FLIX</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-<header class="header">
-    <div class="header-inner">
-        <div class="logo">MINI-FLIX</div>
-        <div class="nav">
-            <a href="{{ url_for('index') }}">Início</a>
-        </div>
-    </div>
-</header>
+{% extends "base.html" %}
+{% block title %}Erro no servidor — METFLIX{% endblock %}
 
-<div class="container empty-state">
+{% block content %}
+<section class="empty-state error-state">
+    <p class="error-code">500</p>
     <h1>Algo deu errado nos bastidores.</h1>
     <p>O servidor teve um pequeno colapso dramático. Tente novamente em alguns instantes.</p>
-    <a href="{{ url_for('index') }}" class="btn">Voltar para o início</a>
-</div>
-</body>
-</html>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar para o catálogo</a>
+</section>
+{% endblock %}

@@ -1,5 +1,4 @@
 import os
-import json
 from datetime import datetime
 from functools import lru_cache
 
@@ -14,6 +13,7 @@ from flask import (
     redirect,
     flash,
 )
+from werkzeug.utils import safe_join
 from flask_login import (
     LoginManager,
     login_user,
@@ -22,14 +22,14 @@ from flask_login import (
     current_user,
 )
 
-from config import MEDIA_ROOT, PROGRESS_FILE, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, SECRET_KEY, AVATAR_UPLOAD_FOLDER, ALLOWED_AVATAR_EXTENSIONS
+from config import MEDIA_ROOT, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, SECRET_KEY, AVATAR_UPLOAD_FOLDER, ALLOWED_AVATAR_EXTENSIONS
 from media_indexer import (
     get_series_library,
     get_series_cards,
     find_episode_info,
 )
 from ia_episodios import gerar_descricao_episodio
-from models import db, User
+from models import db, User, WatchProgress
 
 app = Flask(__name__)
 
@@ -122,57 +122,59 @@ def change_password():
     return render_template("change_password.html")
 
 # ======================
-# Progresso / continuar assistindo (global por enquanto)
+# Progresso / continuar assistindo (por usuário)
 # ======================
 
-def load_progress():
-    if not os.path.exists(PROGRESS_FILE):
-        return {}
-    try:
-        with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+def record_progress(user_id: int, relative_path: str, serie_name: str, episode_name: str) -> None:
+    progress = WatchProgress.query.filter_by(
+        user_id=user_id, relative_path=relative_path
+    ).first()
+
+    now = datetime.utcnow()
+    if progress:
+        progress.last_watched = now
+        progress.serie_name = serie_name
+        progress.episode_name = episode_name
+    else:
+        progress = WatchProgress(
+            user_id=user_id,
+            relative_path=relative_path,
+            serie_name=serie_name,
+            episode_name=episode_name,
+            last_watched=now,
+        )
+        db.session.add(progress)
+
+    db.session.commit()
 
 
-def save_progress(progress: dict):
-    os.makedirs(os.path.dirname(PROGRESS_FILE), exist_ok=True)
-    with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(progress, f, ensure_ascii=False, indent=2)
-
-
-def build_continue_list(library: dict):
-    progress = load_progress()
-    items = []
-
+def build_continue_list(library: dict, user_id: int):
     poster_lookup = {name: data.get("poster") for name, data in library.items()}
 
-    for rel_path, meta in progress.items():
-        serie_name = meta.get("serie_name", "")
-        episode_name = meta.get("episode_name", os.path.basename(rel_path))
-        last_watched = meta.get("last_watched", "")
+    rows = (
+        WatchProgress.query.filter_by(user_id=user_id)
+        .order_by(WatchProgress.last_watched.desc())
+        .all()
+    )
+
+    items = []
+    seen_series = set()
+    for row in rows:
+        if row.serie_name in seen_series:
+            continue
+        seen_series.add(row.serie_name)
 
         items.append(
             {
-                "relative_path": rel_path,
-                "serie_name": serie_name,
-                "episode_name": episode_name,
-                "poster": poster_lookup.get(serie_name),
-                "last_watched": last_watched,
+                "relative_path": row.relative_path,
+                "serie_name": row.serie_name,
+                "episode_name": row.episode_name,
+                "poster": poster_lookup.get(row.serie_name),
+                "last_watched": row.last_watched.isoformat() if row.last_watched else "",
             }
         )
 
-    items.sort(key=lambda x: x["last_watched"], reverse=True)
-
-    unique = []
-    seen_series = set()
-    for item in items:
-        if item["serie_name"] in seen_series:
-            continue
-        seen_series.add(item["serie_name"])
-        unique.append(item)
-
-    return unique
+    return items
 
 
 def get_prev_and_next_episode(library, serie_name: str, relative_path: str):
@@ -271,7 +273,7 @@ def register():
 def index():
     library = get_cached_library()
     series_cards = get_series_cards(library)
-    continue_list = build_continue_list(library)
+    continue_list = build_continue_list(library, current_user.id)
 
     return render_template(
         "index.html",
@@ -315,13 +317,12 @@ def watch(relative_path):
     season_name = info.get("season_name", "")
     episode_index = info.get("episode_index")
 
-    progress = load_progress()
-    progress[rel_norm] = {
-        "serie_name": serie_name,
-        "episode_name": episode_name,
-        "last_watched": datetime.now().isoformat(),
-    }
-    save_progress(progress)
+    record_progress(
+        current_user.id,
+        rel_norm,
+        serie_name,
+        episode_name,
+    )
 
     prev_episode, next_episode = get_prev_and_next_episode(
         library, serie_name, rel_norm
@@ -389,32 +390,24 @@ def api_season(serie_name, season_index):
 # Arquivos de mídia
 # ======================
 
+def send_media(relative_path: str):
+    rel_norm = relative_path.replace("\\", "/").lstrip("/")
+    safe_path = safe_join(MEDIA_ROOT, rel_norm)
+    if safe_path is None or not os.path.exists(safe_path):
+        abort(404)
+    return send_from_directory(MEDIA_ROOT, rel_norm, as_attachment=False)
+
+
 @app.route("/stream/<path:relative_path>")
 @login_required
 def stream(relative_path):
-    dir_name = os.path.dirname(relative_path)
-    file_name = os.path.basename(relative_path)
-    video_dir = os.path.join(MEDIA_ROOT, dir_name)
-
-    file_path = os.path.join(video_dir, file_name)
-    if not os.path.exists(file_path):
-        abort(404)
-
-    return send_from_directory(video_dir, file_name, as_attachment=False)
+    return send_media(relative_path)
 
 
 @app.route("/media/<path:relative_path>")
 @login_required
 def media_file(relative_path):
-    dir_name = os.path.dirname(relative_path)
-    file_name = os.path.basename(relative_path)
-    base_dir = os.path.join(MEDIA_ROOT, dir_name)
-
-    file_path = os.path.join(base_dir, file_name)
-    if not os.path.exists(file_path):
-        abort(404)
-
-    return send_from_directory(base_dir, file_name, as_attachment=False)
+    return send_media(relative_path)
 
 
 # ======================

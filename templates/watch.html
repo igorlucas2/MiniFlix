@@ -1,39 +1,49 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ serie_name }} — {{ episode_name }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-<header class="header">
-    <div class="header-inner">
-        <div class="logo">MINI-FLIX</div>
+{% extends "base.html" %}
+{% block title %}{{ serie_name }} — {{ episode_name }}{% endblock %}
 
-        <div class="header-right">
-            <div class="nav">
-                <a href="{{ url_for('index') }}">Início</a>
-                <input id="searchInput" type="text" placeholder="Buscar série..." class="search-input">
-            </div>
-
-            {% if current_user.is_authenticated %}
-            <div class="user-menu">
-                <button type="button" class="btn-header" id="openSettings">
-                ⚙ Configurações
-                </button>
-                <a href="{{ url_for('profile') }}" class="avatar-link" title="Perfil">
-                    <img src="{{ current_user.avatar_url }}" alt="Avatar">
-                </a>
-                <a href="{{ url_for('logout') }}" class="user-link logout-link">Sair</a>
-            </div>
-            {% endif %}
-
-        </div>
+{% block content %}
+<div class="watch-shell" data-next-url="{{ url_for('watch', relative_path=next_episode) if next_episode else '' }}">
+    <div class="watch-top">
+        <a class="btn btn-ghost btn-back" href="{{ url_for('serie_detail', serie_name=serie_name) }}">
+            Voltar para {{ serie_name }}
+        </a>
+        <button type="button" class="btn btn-ghost" id="openSettings">
+            Configurações
+        </button>
     </div>
-</header>
 
-<!-- Painel de configurações -->
+    <div class="watch-headings">
+        {% if season_name %}
+            <p class="watch-meta">
+                {{ season_name }}
+                {% if episode_index %} • Episódio {{ episode_index }}{% endif %}
+            </p>
+        {% endif %}
+        <h1 class="page-title">{{ serie_name }}</h1>
+        <p class="episode-title">{{ episode_name }}</p>
+    </div>
+
+    <div class="video-wrapper">
+        <video id="videoPlayer" controls autoplay playsinline>
+            <source src="{{ url_for('stream', relative_path=relative_path) }}" type="video/mp4">
+            Seu navegador não suporta o elemento de vídeo.
+        </video>
+    </div>
+
+    <div class="episode-nav">
+        {% if prev_episode %}
+            <a class="btn btn-ghost" href="{{ url_for('watch', relative_path=prev_episode) }}">
+                Episódio anterior
+            </a>
+        {% endif %}
+        {% if next_episode %}
+            <a class="btn btn-primary" href="{{ url_for('watch', relative_path=next_episode) }}">
+                Próximo episódio
+            </a>
+        {% endif %}
+    </div>
+</div>
+
 <div id="settingsPanel" class="settings-panel hidden">
     <div class="settings-box">
         <h2>Configurações de reprodução</h2>
@@ -52,188 +62,27 @@
             </select>
         </label>
 
-        <button type="button" class="btn settings-close" id="closeSettings">Fechar</button>
+        <button type="button" class="btn btn-ghost settings-close" id="closeSettings">Fechar</button>
     </div>
 </div>
 
-<div class="container page-enter">
-    <a class="btn-back" href="{{ url_for('serie_detail', serie_name=serie_name) }}">
-        ← Voltar para {{ serie_name }}
-    </a>
+{% if next_episode %}
+    <div id="autoplayOverlay" class="autoplay-overlay hidden">
+        <div class="autoplay-box">
+            <h2>Próximo episódio</h2>
+            <p>Vai começar em <span id="countdown">10</span> segundos...</p>
 
-    <h1>{{ serie_name }} — {{ episode_name }}</h1>
-
-    {% if season_name %}
-        <p class="episode-info">
-            {{ season_name }}
-            {% if episode_index %} • Episódio {{ episode_index }}{% endif %}
-        </p>
-    {% endif %}
-
-    <div class="video-wrapper">
-        <video id="videoPlayer" controls autoplay playsinline>
-            <source src="{{ url_for('stream', relative_path=stream_path if stream_path is defined else relative_path) }}"
-                    type="video/mp4">
-            Seu navegador não suporta o elemento de vídeo.
-        </video>
-    </div>
-
-    <!-- Navegação de episódios -->
-    <div class="episode-nav">
-        {% if prev_episode %}
-            <a class="btn-episode" href="{{ url_for('watch', relative_path=prev_episode) }}">
-                ⏮ Episódio anterior
-            </a>
-        {% endif %}
-        {% if next_episode %}
-            <a class="btn-episode" href="{{ url_for('watch', relative_path=next_episode) }}">
-                Próximo episódio ⏭
-            </a>
-        {% endif %}
-    </div>
-
-    {% if next_episode %}
-        <!-- Overlay de autoplay -->
-        <div id="autoplayOverlay" class="autoplay-overlay hidden">
-            <div class="autoplay-box">
-                <h2>Próximo episódio</h2>
-                <p>Vai começar em <span id="countdown">10</span> segundos...</p>
-
-                <div class="autoplay-buttons">
-                    <a class="btn" href="{{ url_for('watch', relative_path=next_episode) }}">
-                        Assistir agora
-                    </a>
-                    <button class="btn cancel" id="cancelAutoplay">Cancelar</button>
-                </div>
+            <div class="autoplay-buttons">
+                <a class="btn btn-primary" href="{{ url_for('watch', relative_path=next_episode) }}">
+                    Assistir agora
+                </a>
+                <button class="btn btn-ghost" id="cancelAutoplay">Cancelar</button>
             </div>
         </div>
-    {% endif %}
-</div>
+    </div>
+{% endif %}
+{% endblock %}
 
-<script>
-    const video = document.getElementById("videoPlayer");
-    const overlay = document.getElementById("autoplayOverlay");
-    const nextUrl = "{{ url_for('watch', relative_path=next_episode) if next_episode else '' }}";
-
-    let autoplayEnabled = true;
-    let autoplayDelay = 10;
-    let countdown = autoplayDelay;
-    let interval = null;
-
-    // ========= settings em localStorage =========
-    function loadSettings() {
-        try {
-            const raw = localStorage.getItem("miniflixSettings");
-            if (!raw) return;
-            const parsed = JSON.parse(raw);
-            if (typeof parsed.autoplayEnabled === "boolean") autoplayEnabled = parsed.autoplayEnabled;
-            if (typeof parsed.autoplayDelay === "number") autoplayDelay = parsed.autoplayDelay;
-        } catch (e) {}
-    }
-
-    function saveSettings() {
-        const data = {
-            autoplayEnabled,
-            autoplayDelay
-        };
-        localStorage.setItem("miniflixSettings", JSON.stringify(data));
-    }
-
-    loadSettings();
-
-    // aplica nos controles
-    const autoplayToggle = document.getElementById("autoplayToggle");
-    const autoplayDelaySelect = document.getElementById("autoplayDelaySelect");
-
-    if (autoplayToggle) autoplayToggle.checked = autoplayEnabled;
-    if (autoplayDelaySelect) autoplayDelaySelect.value = String(autoplayDelay);
-
-    if (autoplayToggle) {
-        autoplayToggle.addEventListener("change", () => {
-            autoplayEnabled = autoplayToggle.checked;
-            saveSettings();
-        });
-    }
-
-    if (autoplayDelaySelect) {
-        autoplayDelaySelect.addEventListener("change", () => {
-            autoplayDelay = Number(autoplayDelaySelect.value) || 10;
-            saveSettings();
-        });
-    }
-
-    // ========= painel de configurações =========
-    const settingsPanel = document.getElementById("settingsPanel");
-    const openSettings = document.getElementById("openSettings");
-    const closeSettings = document.getElementById("closeSettings");
-
-    function showSettings() {
-        if (settingsPanel) settingsPanel.classList.remove("hidden");
-    }
-
-    function hideSettings() {
-        if (settingsPanel) settingsPanel.classList.add("hidden");
-    }
-
-    if (openSettings) openSettings.addEventListener("click", showSettings);
-    if (closeSettings) closeSettings.addEventListener("click", hideSettings);
-    if (settingsPanel) {
-        settingsPanel.addEventListener("click", (e) => {
-            if (e.target === settingsPanel) hideSettings();
-        });
-    }
-
-    // ========= autoplay =========
-    function startAutoplayCountdown() {
-        if (!overlay || !nextUrl || !autoplayEnabled) return;
-
-        overlay.classList.remove("hidden");
-
-        const countdownSpan = document.getElementById("countdown");
-        countdown = autoplayDelay;
-        countdownSpan.textContent = countdown;
-
-        interval = setInterval(() => {
-            countdown--;
-            countdownSpan.textContent = countdown;
-
-            if (countdown <= 0) {
-                clearInterval(interval);
-                window.location.href = nextUrl;
-            }
-        }, 1000);
-    }
-
-    if (video) {
-        video.addEventListener("ended", () => {
-            if (nextUrl) startAutoplayCountdown();
-        });
-    }
-
-    const cancelBtn = document.getElementById("cancelAutoplay");
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", () => {
-            clearInterval(interval);
-            overlay.classList.add("hidden");
-        });
-    }
-
-    // tecla "F" alterna tela cheia
-    document.addEventListener("keydown", (event) => {
-        if (event.key.toLowerCase() === "f" && video) {
-            if (!document.fullscreenElement) {
-                video.requestFullscreen().catch(() => {});
-            } else {
-                document.exitFullscreen().catch(() => {});
-            }
-        }
-    });
-
-    // pequena animação de entrada
-    requestAnimationFrame(() => {
-        document.querySelector(".page-enter")?.classList.add("page-enter-active");
-    });
-</script>
-
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/watch.js') }}" defer></script>
+{% endblock %}
